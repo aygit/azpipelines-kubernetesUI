@@ -6,6 +6,7 @@
 import { V1Pod } from "@kubernetes/client-node";
 import { BaseComponent } from "@uifabric/utilities";
 import { Header, TitleSize } from "azure-devops-ui/Header";
+import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { Page } from "azure-devops-ui/Page";
 import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
 import * as React from "react";
@@ -55,7 +56,7 @@ export class PodsRightPanel extends BaseComponent<IPodRightPanelProps, IPodsRigh
                     />
                 </TabBar>
                 <div className="pod-details-right-content page-content page-content-top">
-                    {this._getTabContent()}
+                    {this._getPageContent()}
                 </div>
             </Page>
         );
@@ -67,7 +68,8 @@ export class PodsRightPanel extends BaseComponent<IPodRightPanelProps, IPodsRigh
                 title={(this.props.pod.metadata && this.props.pod.metadata.name) || ""}
                 titleSize={TitleSize.Large}
                 className={"pod-right-panel-header"}
-            />);
+            />
+        );
     }
 
     private _onSelectedTabChanged = (selectedTab: string): void => {
@@ -76,12 +78,23 @@ export class PodsRightPanel extends BaseComponent<IPodRightPanelProps, IPodsRigh
         });
     }
 
-    private _getTabContent(): React.ReactNode {
+    private _getPageContent(): React.ReactNode {
+        const podErrorMessage: string = this.props.pod.status.message;
+        return (
+            <>
+                {podErrorMessage && <MessageCard severity={MessageCardSeverity.Error}>{podErrorMessage}</MessageCard>}
+                <div className={podErrorMessage ? "page-content-top" : ""}>
+                    {this._getSelectedTabContent()}
+                </div>
+            </>
+        );
+    }
+
+    private _getSelectedTabContent(): React.ReactNode {
         const selectedTab = this.state.selectedTab;
         switch (selectedTab) {
-            case PodsRightPanelTabsKeys.PodsLogsKey: return (
-                <span>{"Pods Logs View coming soon..."}</span>
-            );
+            case PodsRightPanelTabsKeys.PodsLogsKey:
+                return <span>{"Pods Logs View coming soon..."}</span>;
 
             case PodsRightPanelTabsKeys.PodsYamlKey:
                 return <PodYaml key={this.props.pod.metadata.uid} pod={this.props.pod} />;

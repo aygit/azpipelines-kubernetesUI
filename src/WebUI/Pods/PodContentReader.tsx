@@ -15,6 +15,7 @@ import "monaco-editor/esm/vs/basic-languages/yaml/yaml.contribution";
 // additional functionality of editor
 import "monaco-editor/esm/vs/editor/browser/controller/coreCommands";
 import "monaco-editor/esm/vs/editor/contrib/find/findController";
+import "monaco-editor/esm/vs/editor/contrib/message/messageController";
 
 export interface IReaderProps extends IVssComponentProperties {
     text: string;

@@ -29,7 +29,7 @@ import { PodsStore } from "../Pods/PodsStore";
 import { PodsTable } from "../Pods/PodsTable";
 import * as Resources from "../Resources";
 import { IVssComponentProperties } from "../Types";
-import { Utils } from "../Utils";
+import { Utils, IMetadataAnnotationPipeline } from "../Utils";
 import "./WorkloadDetails.scss";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { KubeSummary } from "../Common/KubeSummary";
@@ -170,9 +170,52 @@ export class WorkloadDetails extends BaseComponent<IWorkloadDetailsProperties, I
     private _getWorkloadDetails(): JSX.Element | null {
         const metadata = this.props.parentMetaData;
         if (metadata) {
-            const pipeline = Utils.getPipelineText(metadata.annotations);
+            const pipelineDetails = Utils.getPipelineDetails(metadata.annotations);
             const tableItems: IWorkLoadDetailsItem[] = [{ podTemplate: this.props.podTemplate, parentMetaData: metadata, selector: this.props.selector }];
             const agoTime = Date_Utils.ago(new Date(metadata.creationTimestamp), Date_Utils.AgoFormat.Compact);
+
+            const getSubtext = (pipelineDetails: IMetadataAnnotationPipeline): React.ReactNode => {
+                const first = pipelineDetails.jobName
+                    ? localeFormat(Resources.ServiceCreatedWithPipelineText, agoTime, pipelineDetails.jobName)
+                    : localeFormat(Resources.CreatedAgo, agoTime);
+
+                const runElement = pipelineDetails.runName
+                    ? (pipelineDetails.runUrl
+                        ? (<Link rel={"noopener noreferrer"} href={pipelineDetails.runUrl}>{"#" + pipelineDetails.runName}</Link>)
+                        : "#" + pipelineDetails.runName)
+                    : undefined;
+
+                let second = runElement;
+                if (pipelineDetails.pipelineName) {
+                    // Trying to format the resource string with {0} possibly being a link.
+                    // First put the pipeline name, and in the place on run, put {0}
+                    // Pipeline name might have surrounding quotes
+                    const runText = localeFormat(Resources.RunInformationForWorkload, "{0}", pipelineDetails.pipelineName.replace(/^"|"$/g, ""));
+
+                    // Find index of the run placeholder
+                    const indexOfRun = runText.indexOf("{0}");
+
+                    second = (<span>
+                        {runText.substring(0, indexOfRun - 1)}
+                        {runElement}
+                        {runText.substring(indexOfRun + 3)}
+                    </span>);
+                }
+
+                return (
+                    <span>
+                        {first}
+                        {
+                            second
+                                ? <span>
+                                    <span className={"runs-bullet"}>•</span>
+                                    {second}
+                                </span>
+                                : undefined
+                        }
+                    </span>
+                )
+            }
 
             return (
                 <CustomCard className="workload-details-card k8s-card-padding flex-grow bolt-card-no-vertical-padding">
@@ -185,9 +228,7 @@ export class WorkloadDetails extends BaseComponent<IWorkloadDetailsProperties, I
                             </HeaderTitleRow>
                             <HeaderDescription className={"text-ellipsis"}>
                                 {
-                                    pipeline
-                                        ? localeFormat(Resources.ServiceCreatedWithPipelineText, agoTime, pipeline)
-                                        : localeFormat(Resources.CreatedAgo, agoTime)
+                                    getSubtext(pipelineDetails)
                                 }
                             </HeaderDescription>
                         </HeaderTitleArea>

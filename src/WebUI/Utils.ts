@@ -13,9 +13,18 @@ import { ILabelModel } from "azure-devops-ui/Label";
 
 const pipelineNameAnnotationKey: string = "azure-pipelines/pipeline";
 const pipelineExecutionIdAnnotationKey: string = "azure-pipelines/execution";
+const pipelineExecutionUrlAnnotationKey: string = "azure-pipelines/executionuri";
+const pipelineJobNameAnnotationKey: string = "azure-pipelines/__TEMP_PLACEHOLDER__";
 const matchPatternForImageName = new RegExp(/\:\/\/(.+?)\@/);
 const matchPatternForDigest = new RegExp(/\@sha256\:(.+)/);
 const invalidCharPatternInNamespace = new RegExp(/[:.]/);
+
+export interface IMetadataAnnotationPipeline {
+    runName: string | undefined;
+    runUrl: string | undefined;
+    pipelineName: string | undefined;
+    jobName: string | undefined;
+}
 
 export class Utils {
     public static isOwnerMatched(objectMeta: V1ObjectMeta, ownerUIdLowerCase: string): boolean {
@@ -66,6 +75,19 @@ export class Utils {
         return pipelineName && pipelineExecutionId ? localeFormat("{0} / {1}", pipelineName, pipelineExecutionId) : "";
     }
 
+    public static getPipelineDetails(annotations: { [key: string]: string }): IMetadataAnnotationPipeline {
+        if (!annotations) {
+            return {} as IMetadataAnnotationPipeline;
+        }
+
+        return {
+            jobName: annotations[pipelineJobNameAnnotationKey],
+            pipelineName: annotations[pipelineNameAnnotationKey],
+            runName: annotations[pipelineExecutionIdAnnotationKey],
+            runUrl: annotations[pipelineExecutionUrlAnnotationKey]
+        };
+    }
+
     public static getPodsStatusProps(currentScheduledPods: number, desiredPods: number): IStatusProps | undefined {
         // todo:: modify logic to base on pod events so that we can distinguish between pending/failed pods
         if (desiredPods != null && desiredPods > 0) {
@@ -101,7 +123,7 @@ export class Utils {
         return true;
     }
 
-    public static getImageText(podSpec: V1PodSpec | undefined): { imageText: string, imageTooltipText?: string} {
+    public static getImageText(podSpec: V1PodSpec | undefined): { imageText: string, imageTooltipText?: string } {
         let images: string[] = [];
         let imageText: string = "";
         let imageTooltipText: string = "";
@@ -222,10 +244,10 @@ export class Utils {
         }
 
         if (repository) {
-            return format("https://{0}/{1}/{2}/{3}{4}", registry, imgNamespace, repository,"@sha256", digest);
+            return format("https://{0}/{1}/{2}/{3}{4}", registry, imgNamespace, repository, "@sha256", digest);
         }
         else {
-            return format("https://{0}/{1}{2}{3}", registry, imgNamespace,"@sha256", digest);
+            return format("https://{0}/{1}{2}{3}", registry, imgNamespace, "@sha256", digest);
         }
     }
 

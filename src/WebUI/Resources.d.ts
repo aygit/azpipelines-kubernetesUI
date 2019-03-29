@@ -28,6 +28,7 @@ export declare const AgoBy: string;
 export declare const Deployment: string;
 export declare const ReplicaSet: string;
 export declare const ServiceCreatedWithPipelineText: string;
+export declare const RunInformationForWorkload: string;
 export declare const OverviewText: string;
 export declare const LabelsText: string;
 export declare const SelectorText: string;
